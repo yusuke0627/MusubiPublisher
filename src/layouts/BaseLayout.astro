@@ -1,4 +1,5 @@
 ---
+import MusubiLogo from '../components/MusubiLogo.astro';
 import { withBase } from '../lib/urls';
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
   description?: string;
   ogType?: 'website' | 'article';
   publishedAt?: Date;
+  wide?: boolean;
 }
 
 const {
@@ -13,11 +15,15 @@ const {
   description = '海外・国内の話題をAIと編集部で分かりやすく整理してお届けするキュレーションメディア。',
   ogType = 'website',
   publishedAt,
+  wide = false,
 } = Astro.props;
 
 const siteName = 'MusubiPublisher';
 const fullTitle = title === siteName ? siteName : `${title} | ${siteName}`;
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://yusuke0627.github.io').toString();
+const canonicalUrl = new URL(
+  Astro.url.pathname,
+  Astro.site ?? 'https://yusuke0627.github.io'
+).toString();
 const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
 ---
 
@@ -26,8 +32,10 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="canonical" href={canonicalUrl} />
     <link
       rel="alternate"
@@ -59,40 +67,113 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
     <style is:global>
       :root {
         color-scheme: light dark;
-        --bg: #faf6ee;
-        --surface: #ffffff;
-        --surface-soft: #f3ede0;
-        --text: #141e30;
-        --muted: #526075;
-        --border: #e4dccb;
-        --accent: #d93848;
-        --accent-soft: rgba(217, 56, 72, 0.1);
-        --indigo: #1e2d4a;
+
+        --bg-light: #fcfbf7;
+        --bg-dark: #0c1220;
+        --surface-light: #ffffff;
+        --surface-dark: #141d31;
+        --surface-soft-light: #f4efe6;
+        --surface-soft-dark: #1c2740;
+        --text-light: #1e293b;
+        --text-dark: #eef2f8;
+        --muted-light: #5a677d;
+        --muted-dark: #9ba8bf;
+        --border-light: #ebe5d8;
+        --border-dark: #26344f;
+        --border-strong-light: #d7cebc;
+        --border-strong-dark: #3a4c70;
+        --accent-light: #e63946;
+        --accent-dark: #ff5c6c;
+        --accent-soft-light: rgba(230, 57, 70, 0.1);
+        --accent-soft-dark: rgba(255, 92, 108, 0.16);
+        --indigo-light: #1e293b;
+        --indigo-dark: #e2e8f0;
+        --indigo-contrast-light: #ffffff;
+        --indigo-contrast-dark: #0f172a;
+
+        --bg: var(--bg-light);
+        --surface: var(--surface-light);
+        --surface-soft: var(--surface-soft-light);
+        --text: var(--text-light);
+        --muted: var(--muted-light);
+        --border: var(--border-light);
+        --border-strong: var(--border-strong-light);
+        --accent: var(--accent-light);
+        --accent-soft: var(--accent-soft-light);
+        --indigo: var(--indigo-light);
+        --indigo-contrast: var(--indigo-contrast-light);
+        --card-shadow: 0 2px 10px rgba(30, 41, 59, 0.04);
+        --card-shadow-hover: 0 8px 22px rgba(30, 41, 59, 0.08);
+
+        --cat-tech-bg: #e7f4ee;
+        --cat-tech-text: #1c6b4b;
+        --cat-dev-bg: #e8f0fe;
+        --cat-dev-text: #1d4ed8;
+        --cat-world-bg: #fef0e6;
+        --cat-world-text: #b45309;
+        --cat-game-bg: #f1ebfe;
+        --cat-game-text: #6d28d9;
+        --cat-trend-bg: #fdecee;
+        --cat-trend-text: #be123c;
       }
+
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #0c1220;
-          --surface: #141d31;
-          --surface-soft: #1b2740;
-          --text: #eef2f8;
-          --muted: #98a6bd;
-          --border: #273552;
-          --accent: #ff5c6c;
-          --accent-soft: rgba(255, 92, 108, 0.15);
-          --indigo: #93b4f5;
+          --bg: var(--bg-dark);
+          --surface: var(--surface-dark);
+          --surface-soft: var(--surface-soft-dark);
+          --text: var(--text-dark);
+          --muted: var(--muted-dark);
+          --border: var(--border-dark);
+          --border-strong: var(--border-strong-dark);
+          --accent: var(--accent-dark);
+          --accent-soft: var(--accent-soft-dark);
+          --indigo: var(--indigo-dark);
+          --indigo-contrast: var(--indigo-contrast-dark);
+          --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
+          --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.42);
+
+          --cat-tech-bg: rgba(52, 211, 153, 0.16);
+          --cat-tech-text: #6ee7b7;
+          --cat-dev-bg: rgba(96, 165, 250, 0.16);
+          --cat-dev-text: #93c5fd;
+          --cat-world-bg: rgba(251, 191, 36, 0.16);
+          --cat-world-text: #fcd34d;
+          --cat-game-bg: rgba(167, 139, 250, 0.18);
+          --cat-game-text: #c4b5fd;
+          --cat-trend-bg: rgba(251, 113, 133, 0.18);
+          --cat-trend-text: #fda4af;
         }
       }
+
+      @supports (color: light-dark(white, black)) {
+        :root {
+          --bg: light-dark(var(--bg-light), var(--bg-dark));
+          --surface: light-dark(var(--surface-light), var(--surface-dark));
+          --surface-soft: light-dark(var(--surface-soft-light), var(--surface-soft-dark));
+          --text: light-dark(var(--text-light), var(--text-dark));
+          --muted: light-dark(var(--muted-light), var(--muted-dark));
+          --border: light-dark(var(--border-light), var(--border-dark));
+          --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
+          --accent: light-dark(var(--accent-light), var(--accent-dark));
+          --accent-soft: light-dark(var(--accent-soft-light), var(--accent-soft-dark));
+          --indigo: light-dark(var(--indigo-light), var(--indigo-dark));
+          --indigo-contrast: light-dark(var(--indigo-contrast-light), var(--indigo-contrast-dark));
+        }
+      }
+
       * { box-sizing: border-box; }
       body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
         background: var(--bg);
         color: var(--text);
-        line-height: 1.8;
+        line-height: 1.75;
         -webkit-font-smoothing: antialiased;
       }
       a { color: var(--accent); text-decoration: none; }
       a:hover { text-decoration: underline; }
+
       header.site-header {
         position: sticky;
         top: 0;
@@ -101,9 +182,9 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
         border-bottom: 1px solid var(--border);
       }
       .header-inner {
-        max-width: 820px;
+        max-width: 1040px;
         margin: 0 auto;
-        padding: 14px 20px;
+        padding: 12px 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -111,35 +192,104 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
       }
       .brand {
         font-weight: 800;
-        font-size: 19px;
-        color: var(--text);
+        font-size: 20px;
+        color: var(--indigo);
         letter-spacing: -0.02em;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
       }
       .brand:hover { text-decoration: none; }
-      .brand-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: var(--accent);
-        display: inline-block;
-      }
       nav.site-nav {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 18px;
         font-size: 13px;
         font-weight: 600;
       }
       nav.site-nav a { color: var(--muted); }
       nav.site-nav a:hover { color: var(--text); text-decoration: none; }
+
       main.container {
         max-width: 820px;
         margin: 0 auto;
-        padding: 28px 20px 64px;
+        padding: 24px 20px 64px;
       }
+      main.container.container-wide {
+        max-width: 1040px;
+      }
+
+      .category-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 2px 0 18px;
+        scrollbar-width: none;
+      }
+      @supports not (scrollbar-width: none) {
+        .category-bar::-webkit-scrollbar {
+          display: none;
+        }
+      }
+      .category-pill {
+        flex-shrink: 0;
+        display: inline-block;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        background: var(--surface-soft);
+        color: var(--text);
+        border: 1px solid transparent;
+        transition: background-color 0.15s ease, color 0.15s ease;
+      }
+      .category-pill:hover {
+        text-decoration: none;
+        border-color: var(--border-strong);
+      }
+      .category-pill.active {
+        background: var(--accent);
+        color: #ffffff;
+      }
+      .category-pill.active:hover {
+        border-color: transparent;
+      }
+
+      .feed-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 24px;
+        align-items: start;
+      }
+      .feed-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      @media (max-width: 860px) {
+        .feed-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: var(--card-shadow);
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
       footer.site-footer {
         border-top: 1px solid var(--border);
         background: var(--surface);
@@ -156,29 +306,14 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
         margin-bottom: 10px;
       }
       .footer-links a { color: var(--muted); }
-      .badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        background: var(--accent-soft);
-        color: var(--accent);
-      }
-      .card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 20px;
-      }
     </style>
   </head>
   <body>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href={withBase('')}>
-          <span class="brand-dot" aria-hidden="true"></span>
-          MusubiPublisher
+          <MusubiLogo size={32} />
+          <span>MusubiPublisher</span>
         </a>
         <nav class="site-nav" aria-label="メインナビゲーション">
           <a href={withBase('')}>ホーム</a>
@@ -188,7 +323,7 @@ const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
       </div>
     </header>
 
-    <main class="container">
+    <main class={wide ? 'container container-wide' : 'container'}>
       <slot />
     </main>
 

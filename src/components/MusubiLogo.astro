@@ -1,0 +1,56 @@
+---
+interface Props {
+  size?: number;
+}
+const { size = 32 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 64 64"
+  fill="none"
+  aria-hidden="true"
+  style="flex-shrink:0;"
+>
+  <path
+    d="M10 47C16 43.5 23.5 43.5 32 48C40.5 43.5 48 43.5 54 47V26C48 22.5 40.5 22.5 32 27C23.5 22.5 16 22.5 10 26V47Z"
+    stroke="currentColor"
+    stroke-width="3.2"
+    stroke-linejoin="round"
+    fill="var(--surface)"
+  />
+  <path
+    d="M32 27V48"
+    stroke="currentColor"
+    stroke-width="2.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M17 32.5C20.5 31.8 24 32 27 33.2M17 38.5C20.5 37.8 23.5 38 26 39M47 32.5C43.5 31.8 40 32 37 33.2M47 38.5C43.5 37.8 40.5 38 38 39"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.45"
+  />
+  <path
+    d="M27 25C19 22 16 13.5 22.5 10.5C27.5 8.2 31 13.5 32 16C33 13.5 36.5 8.2 41.5 10.5C48 13.5 45 22 37 25"
+    stroke="var(--accent)"
+    stroke-width="3.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M28.5 31C28.5 23 34.5 19.5 38.5 15"
+    stroke="currentColor"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    opacity="0.82"
+  />
+  <path
+    d="M35.5 31C35.5 23 29.5 19.5 25.5 15"
+    stroke="var(--accent)"
+    stroke-width="2.6"
+    stroke-linecap="round"
+  />
+</svg>

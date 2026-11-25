@@ -1,0 +1,193 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDateJa, withBase } from '../lib/urls';
+
+interface Props {
+  article: CollectionEntry<'articles'>;
+}
+
+const { article } = Astro.props;
+
+type CategoryTone = { bg: string; text: string; icon: 'tech' | 'dev' | 'world' | 'game' | 'trend' };
+
+function getCategoryTone(category: string): CategoryTone {
+  if (category.includes('開発') || category.includes('エンジニア')) {
+    return { bg: 'var(--cat-dev-bg)', text: 'var(--cat-dev-text)', icon: 'dev' };
+  }
+  if (category.includes('海外') || category.includes('ニュース')) {
+    return { bg: 'var(--cat-world-bg)', text: 'var(--cat-world-text)', icon: 'world' };
+  }
+  if (category.includes('ゲーム') || category.includes('エンタメ')) {
+    return { bg: 'var(--cat-game-bg)', text: 'var(--cat-game-text)', icon: 'game' };
+  }
+  if (category.includes('国内') || category.includes('トレンド')) {
+    return { bg: 'var(--cat-trend-bg)', text: 'var(--cat-trend-text)', icon: 'trend' };
+  }
+  return { bg: 'var(--cat-tech-bg)', text: 'var(--cat-tech-text)', icon: 'tech' };
+}
+
+const tone = getCategoryTone(article.data.category);
+const articleHref = withBase(`articles/${article.id}/`);
+---
+
+<article class="article-card">
+  <div class="article-card-body">
+    <div class="article-meta">
+      <a
+        class="cat-pill"
+        style={`background:${tone.bg}; color:${tone.text};`}
+        href={withBase(`category/${encodeURIComponent(article.data.category)}/`)}
+      >
+        {article.data.category}
+      </a>
+      <span class="meta-source">
+        {article.data.sourceName} ・ {formatDateJa(article.data.publishedAt)}
+      </span>
+    </div>
+
+    <h2 class="article-title">
+      <a href={articleHref}>{article.data.title}</a>
+    </h2>
+
+    <p class="article-desc">{article.data.description}</p>
+  </div>
+
+  <a
+    href={articleHref}
+    class="article-thumb"
+    aria-hidden="true"
+    tabindex="-1"
+    style={`background:${tone.bg}; color:${tone.text};`}
+  >
+    {tone.icon === 'tech' && (
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+        <rect x="14" y="14" width="20" height="20" rx="5" stroke="currentColor" stroke-width="2.4"/>
+        <circle cx="24" cy="24" r="4" fill="var(--accent)"/>
+        <path d="M24 6V12M24 36V42M6 24H12M36 24H42" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    )}
+    {tone.icon === 'dev' && (
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+        <path d="M18 16L10 24L18 32" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M30 16L38 24L30 32" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M27 12L21 36" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+    )}
+    {tone.icon === 'world' && (
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="15" stroke="currentColor" stroke-width="2.4"/>
+        <ellipse cx="24" cy="24" rx="7" ry="15" stroke="currentColor" stroke-width="2"/>
+        <path d="M10 24H38" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    )}
+    {tone.icon === 'game' && (
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+        <rect x="8" y="16" width="32" height="18" rx="9" stroke="currentColor" stroke-width="2.4"/>
+        <path d="M17 21V29M13 25H21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="31" cy="23" r="2.2" fill="var(--accent)"/>
+        <circle cx="35" cy="27" r="2.2" fill="currentColor"/>
+      </svg>
+    )}
+    {tone.icon === 'trend' && (
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+        <path d="M10 33L19 23L26 28L38 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M30 15H38V23" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    )}
+  </a>
+</article>
+
+<style>
+  .article-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  }
+  .article-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+    box-shadow: var(--card-shadow-hover);
+  }
+  .article-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .article-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .cat-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .cat-pill:hover {
+    text-decoration: none;
+    opacity: 0.88;
+  }
+  .meta-source {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .article-title {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+  }
+  .article-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .article-title a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .article-desc {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .article-thumb {
+    width: 84px;
+    height: 84px;
+    border-radius: 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+  }
+  @media (max-width: 520px) {
+    .article-card {
+      padding: 16px;
+      gap: 12px;
+    }
+    .article-title {
+      font-size: 16px;
+    }
+    .article-thumb {
+      width: 68px;
+      height: 68px;
+    }
+  }
+</style>
