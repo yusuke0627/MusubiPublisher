@@ -28,12 +28,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Collect source URLs from existing draft PRs (open & closed)
+        id: pr_seen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+
+          const raw = execFileSync(
+            'gh',
+            ['pr', 'list', '--state', 'all', '--limit', '100', '--json', 'headRefName,body'],
+            { encoding: 'utf8' }
+          );
+          const prs = JSON.parse(raw);
+          const urls = new Set();
+          for (const pr of prs) {
+            if (!String(pr.headRefName || '').startsWith('draft/')) continue;
+            const body = String(pr.body || '');
+            const match = body.match(/元ソース\*\*:\s*\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/);
+            if (match?.[1]) {
+              urls.add(match[1]);
+            }
+          }
+          fs.writeFileSync('/tmp/extra-seen-urls.json', JSON.stringify(Array.from(urls)));
+          console.log(`Collected ${urls.size} source URL(s) from existing draft PRs.`);
+          EOF
+
       - name: Run curation pipeline
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: npm run curate
+        run: |
+          EXTRA_SEEN_URLS="$(cat /tmp/extra-seen-urls.json)" npm run curate
 
-      - name: Create one draft Pull Request per generated article
+      - name: Create one conflict-free draft Pull Request per generated article
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -56,11 +85,6 @@ jobs:
           execFileSync('git', ['config', 'user.name', 'musubi-curator[bot]']);
           execFileSync('git', ['config', 'user.email', 'musubi-curator[bot]@users.noreply.github.com']);
 
-          const seenPath = 'data/seen-sources.json';
-          const baseSeen = JSON.parse(
-            execFileSync('git', ['show', 'origin/main:data/seen-sources.json'], { encoding: 'utf8' })
-          );
-
           for (const draft of drafts) {
             const articleContent = fs.readFileSync(draft.filePath, 'utf8');
             const existingPr = execFileSync(
@@ -76,12 +100,8 @@ jobs:
             execFileSync('git', ['checkout', '-B', draft.branchName, 'origin/main']);
             fs.writeFileSync(draft.filePath, articleContent, 'utf8');
 
-            const updatedSeen = {
-              seenUrls: Array.from(new Set([...baseSeen.seenUrls, draft.sourceUrl])).slice(-500),
-            };
-            fs.writeFileSync(seenPath, `${JSON.stringify(updatedSeen, null, 2)}\n`, 'utf8');
-
-            execFileSync('git', ['add', draft.filePath, seenPath]);
+            // Only commit the single new article file so concurrent draft PRs NEVER conflict
+            execFileSync('git', ['add', draft.filePath]);
             execFileSync('git', ['commit', '-m', `content: add draft article ${draft.slug}`]);
             execFileSync('git', ['push', '-f', 'origin', draft.branchName]);
 
