@@ -1,0 +1,32 @@
+---
+import { withBase } from '../lib/urls';
+---
+
+<aside
+  class="card"
+  style="margin-top: 28px; background: var(--surface-soft); display: flex; flex-direction: column; gap: 10px;"
+>
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <span class="badge">専用 iOS リーダー</span>
+    <span style="font-size:12px; color:var(--muted);">広告カット・Wi-Fiオフライン対応</span>
+  </div>
+  <h2 style="margin:0; font-size:17px;">MusubiPublisher の記事を爆速・オフラインで読む</h2>
+  <p style="margin:0; font-size:14px; color:var(--muted);">
+    姉妹アプリ <strong>MusubiReader</strong> でこのサイトの RSS フィードを購読すると、Wi-Fi 接続時に自動で事前ダウンロード。地下鉄や移動中でも一瞬で記事が開けます。
+  </p>
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;">
+    <a
+      href="https://yusuke0627.github.io/MusubiReader/"
+      rel="noopener noreferrer"
+      style="display:inline-block; padding:9px 16px; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; font-size:13px; text-decoration:none;"
+    >
+      MusubiReader を見る ↗
+    </a>
+    <a
+      href={withBase('rss.xml')}
+      style="display:inline-block; padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-weight:700; font-size:13px; text-decoration:none;"
+    >
+      RSS フィードURL
+    </a>
+  </div>
+</aside>

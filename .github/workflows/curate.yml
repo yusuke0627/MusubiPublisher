@@ -1,0 +1,101 @@
+name: Auto Curate & Open Draft PRs
+
+on:
+  schedule:
+    # 07:00, 13:00, 19:00 JST (22:00, 04:00, 10:00 UTC)
+    - cron: '0 22,4,10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run curation pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run curate
+
+      - name: Create one draft Pull Request per generated article
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+
+          const manifestPath = 'data/draft-manifest.json';
+          if (!fs.existsSync(manifestPath)) {
+            console.log('No draft manifest found.');
+            process.exit(0);
+          }
+
+          const drafts = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          if (!Array.isArray(drafts) || drafts.length === 0) {
+            console.log('No new draft articles generated.');
+            process.exit(0);
+          }
+
+          execFileSync('git', ['config', 'user.name', 'musubi-curator[bot]']);
+          execFileSync('git', ['config', 'user.email', 'musubi-curator[bot]@users.noreply.github.com']);
+
+          const seenPath = 'data/seen-sources.json';
+          const baseSeen = JSON.parse(
+            execFileSync('git', ['show', 'origin/main:data/seen-sources.json'], { encoding: 'utf8' })
+          );
+
+          for (const draft of drafts) {
+            const articleContent = fs.readFileSync(draft.filePath, 'utf8');
+            const existingPr = execFileSync(
+              'gh',
+              ['pr', 'list', '--head', draft.branchName, '--state', 'all', '--json', 'number'],
+              { encoding: 'utf8' }
+            );
+            if (JSON.parse(existingPr).length > 0) {
+              console.log(`Skipping existing branch/PR: ${draft.branchName}`);
+              continue;
+            }
+
+            execFileSync('git', ['checkout', '-B', draft.branchName, 'origin/main']);
+            fs.writeFileSync(draft.filePath, articleContent, 'utf8');
+
+            const updatedSeen = {
+              seenUrls: Array.from(new Set([...baseSeen.seenUrls, draft.sourceUrl])).slice(-500),
+            };
+            fs.writeFileSync(seenPath, `${JSON.stringify(updatedSeen, null, 2)}\n`, 'utf8');
+
+            execFileSync('git', ['add', draft.filePath, seenPath]);
+            execFileSync('git', ['commit', '-m', `content: add draft article ${draft.slug}`]);
+            execFileSync('git', ['push', '-f', 'origin', draft.branchName]);
+
+            execFileSync('gh', [
+              'pr',
+              'create',
+              '--base',
+              'main',
+              '--head',
+              draft.branchName,
+              '--title',
+              draft.prTitle,
+              '--body',
+              draft.prBody,
+            ]);
+          }
+          EOF

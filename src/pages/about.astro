@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MusubiReaderBanner from '../components/MusubiReaderBanner.astro';
+---
+
+<BaseLayout title="このサイトについて">
+  <article class="card" style="padding:28px 24px;">
+    <h1 style="margin:0 0 12px; font-size:24px;">MusubiPublisher について</h1>
+    <p>
+      <strong>MusubiPublisher</strong> は、Reddit・Hacker News・国内の注目トレンドなどから話題のトピックを収集し、AI と編集部の確認を経て「3行まとめ」「背景」「主な論点」として読みやすく整理してお届けするキュレーションメディアです。
+    </p>
+    <h2>編集・引用ポリシー</h2>
+    <ul>
+      <li>元の投稿・記事の無断丸転載は行わず、独自の日本語要約・解説として構成しています。</li>
+      <li>すべての記事に元スレッド・一次ソースへの出典リンクを明記しています。</li>
+      <li>掲載内容に問題がある場合は、GitHub Issues よりご連絡いただければ速やかに対応します。</li>
+    </ul>
+  </article>
+  <MusubiReaderBanner />
+</BaseLayout>

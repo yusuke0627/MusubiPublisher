@@ -1,0 +1,56 @@
+{
+  "maxArticlesPerRun": 3,
+  "geminiModel": "gemini-3.8-flash",
+  "reddit": [
+    {
+      "subreddit": "technology",
+      "category": "テック",
+      "minScore": 300,
+      "limit": 10
+    },
+    {
+      "subreddit": "programming",
+      "category": "開発・エンジニア",
+      "minScore": 150,
+      "limit": 10
+    },
+    {
+      "subreddit": "worldnews",
+      "category": "海外ニュース",
+      "minScore": 500,
+      "limit": 10
+    },
+    {
+      "subreddit": "gaming",
+      "category": "ゲーム・エンタメ",
+      "minScore": 500,
+      "limit": 10
+    },
+    {
+      "subreddit": "japanlife",
+      "category": "国内トレンド",
+      "minScore": 80,
+      "limit": 10
+    }
+  ],
+  "hackerNews": {
+    "enabled": true,
+    "category": "テック",
+    "minScore": 150,
+    "limit": 10
+  },
+  "rss": [
+    {
+      "name": "はてなブックマーク IT",
+      "url": "https://b.hatena.ne.jp/hotentry/it.rss",
+      "category": "開発・エンジニア",
+      "limit": 8
+    },
+    {
+      "name": "はてなブックマーク 総合",
+      "url": "https://b.hatena.ne.jp/hotentry.rss",
+      "category": "国内トレンド",
+      "limit": 8
+    }
+  ]
+}

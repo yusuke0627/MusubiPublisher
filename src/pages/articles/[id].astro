@@ -1,0 +1,160 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AdSlot from '../../components/AdSlot.astro';
+import MusubiReaderBanner from '../../components/MusubiReaderBanner.astro';
+import { formatDateJa, withBase } from '../../lib/urls';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles');
+  return articles.map((article) => ({
+    params: { id: article.id },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+const canonicalUrl = new URL(
+  Astro.url.pathname,
+  Astro.site ?? 'https://yusuke0627.github.io'
+).toString();
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: article.data.title,
+  description: article.data.description,
+  datePublished: article.data.publishedAt.toISOString(),
+  mainEntityOfPage: canonicalUrl,
+  publisher: {
+    '@type': 'Organization',
+    name: 'MusubiPublisher',
+  },
+};
+---
+
+<BaseLayout
+  title={article.data.title}
+  description={article.data.description}
+  ogType="article"
+  publishedAt={article.data.publishedAt}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="card" style="padding: 28px 24px;">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+      <a
+        class="badge"
+        href={withBase(`category/${encodeURIComponent(article.data.category)}/`)}
+      >
+        {article.data.category}
+      </a>
+      <time
+        datetime={article.data.publishedAt.toISOString()}
+        style="font-size:13px; color:var(--muted);"
+      >
+        {formatDateJa(article.data.publishedAt)}
+      </time>
+      <span style="font-size:13px; color:var(--muted);">
+        出典: {article.data.sourceName}
+      </span>
+    </div>
+
+    <h1 style="margin:0 0 16px; font-size:24px; line-height:1.4; letter-spacing:-0.01em;">
+      {article.data.title}
+    </h1>
+
+    {article.data.tldr.length > 0 && (
+      <section
+        aria-label="3行まとめ"
+        style="background:var(--surface-soft); border-left:4px solid var(--accent); border-radius:10px; padding:14px 16px; margin-bottom:22px;"
+      >
+        <div style="font-size:12px; font-weight:800; color:var(--accent); margin-bottom:6px;">
+          3行まとめ
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:14px;">
+          {article.data.tldr.map((point) => (
+            <li style="margin-bottom:4px;">{point}</li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <AdSlot slot={import.meta.env.PUBLIC_ADSENSE_SLOT_TOP} />
+
+    <div class="article-body">
+      <Content />
+    </div>
+
+    <AdSlot slot={import.meta.env.PUBLIC_ADSENSE_SLOT_BOTTOM} />
+
+    <section
+      aria-label="出典情報"
+      style="margin-top:28px; padding:14px 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface-soft);"
+    >
+      <div style="font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px;">
+        元スレッド・出典リンク（{article.data.sourceName}）
+      </div>
+      <a
+        href={article.data.sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        style="font-size:14px; font-weight:600; word-break:break-all;"
+      >
+        {article.data.sourceTitle} ↗
+      </a>
+    </section>
+
+    {article.data.tags.length > 0 && (
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;">
+        {article.data.tags.map((tag) => (
+          <span
+            style="font-size:12px; color:var(--muted); background:var(--surface-soft); padding:3px 10px; border-radius:999px;"
+          >
+            #{tag}
+          </span>
+        ))}
+      </div>
+    )}
+  </article>
+
+  <MusubiReaderBanner />
+
+  <div style="margin-top:20px;">
+    <a href={withBase('')} style="font-size:14px; font-weight:600;">
+      &larr; 記事一覧へ戻る
+    </a>
+  </div>
+
+  <style>
+    .article-body :global(h2) {
+      margin: 26px 0 10px;
+      font-size: 19px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .article-body :global(h3) {
+      margin: 20px 0 8px;
+      font-size: 16px;
+    }
+    .article-body :global(p) {
+      margin: 0 0 14px;
+      font-size: 15px;
+    }
+    .article-body :global(ul),
+    .article-body :global(ol) {
+      margin: 0 0 14px;
+      padding-left: 22px;
+      font-size: 15px;
+    }
+    .article-body :global(blockquote) {
+      margin: 14px 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--border);
+      background: var(--surface-soft);
+      border-radius: 8px;
+      color: var(--muted);
+    }
+  </style>
+</BaseLayout>
