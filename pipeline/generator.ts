@@ -1,7 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
 import type { GeneratedArticle, SourceItem } from './types.js';
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+export const FALLBACK_GEMINI_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.8-flash',
+] as const;
 
 const ARTICLE_RESPONSE_SCHEMA = {
   type: 'object',
@@ -143,49 +148,92 @@ export function buildCurationPrompt(source: SourceItem): string {
     .join('\n');
 }
 
+function isRateLimitError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+  const obj = err as {
+    status?: number;
+    code?: string;
+    message?: string;
+    rawResponse?: { status?: number };
+    error?: { code?: string; message?: string };
+  };
+  if (obj.status === 429 || obj.rawResponse?.status === 429) {
+    return true;
+  }
+  const combined = `${obj.code ?? ''} ${obj.message ?? ''} ${obj.error?.code ?? ''} ${obj.error?.message ?? ''}`.toLowerCase();
+  return (
+    combined.includes('429') ||
+    combined.includes('too_many_requests') ||
+    combined.includes('rate limit')
+  );
+}
+
 export async function generateArticleWithGemini(
   source: SourceItem,
   options: {
     apiKey: string;
     model?: string;
+    fallbackModels?: readonly string[];
     aiClient?: Pick<GoogleGenAI, 'interactions'>;
   }
 ): Promise<GeneratedArticle> {
   const ai = options.aiClient ?? new GoogleGenAI({ apiKey: options.apiKey });
-  const model = options.model || DEFAULT_GEMINI_MODEL;
+  const primaryModel = options.model || DEFAULT_GEMINI_MODEL;
+  const candidates = Array.from(
+    new Set([primaryModel, ...(options.fallbackModels ?? FALLBACK_GEMINI_MODELS)])
+  );
+  const prompt = buildCurationPrompt(source);
 
-  const response = await ai.interactions.create({
-    model,
-    input: buildCurationPrompt(source),
-    store: false,
-    response_format: {
-      type: 'text',
-      mime_type: 'application/json',
-      schema: ARTICLE_RESPONSE_SCHEMA,
-    },
-  });
+  let lastError: unknown;
+  for (const model of candidates) {
+    try {
+      const response = await ai.interactions.create({
+        model,
+        input: prompt,
+        store: false,
+        response_format: {
+          type: 'text',
+          mime_type: 'application/json',
+          schema: ARTICLE_RESPONSE_SCHEMA,
+        },
+      });
 
-  const rawText = response.output_text;
-  if (!rawText) {
-    throw new Error('Gemini returned empty output_text');
+      const rawText = response.output_text;
+      if (!rawText) {
+        throw new Error(`Gemini (${model}) returned empty output_text`);
+      }
+
+      const parsed = JSON.parse(rawText) as Partial<GeneratedArticle>;
+      if (!parsed.title || !parsed.description || !parsed.bodyMarkdown) {
+        throw new Error(`Gemini (${model}) structured output missing required fields`);
+      }
+
+      return {
+        slug: sanitizeSlug(parsed.slug ?? '', source.sourceUrl),
+        title: parsed.title.trim(),
+        description: parsed.description.trim(),
+        category: source.category,
+        tags: Array.isArray(parsed.tags)
+          ? parsed.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 5)
+          : [source.category],
+        tldr: Array.isArray(parsed.tldr)
+          ? parsed.tldr.map((t) => String(t).trim()).filter(Boolean).slice(0, 3)
+          : [],
+        bodyMarkdown: parsed.bodyMarkdown.trim(),
+      };
+    } catch (err) {
+      lastError = err;
+      if (isRateLimitError(err)) {
+        console.warn(
+          `[MusubiPublisher] Model ${model} hit rate limit (429); trying next fallback model...`
+        );
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const parsed = JSON.parse(rawText) as Partial<GeneratedArticle>;
-  if (!parsed.title || !parsed.description || !parsed.bodyMarkdown) {
-    throw new Error('Gemini structured output missing required fields');
-  }
-
-  return {
-    slug: sanitizeSlug(parsed.slug ?? '', source.sourceUrl),
-    title: parsed.title.trim(),
-    description: parsed.description.trim(),
-    category: source.category,
-    tags: Array.isArray(parsed.tags)
-      ? parsed.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 5)
-      : [source.category],
-    tldr: Array.isArray(parsed.tldr)
-      ? parsed.tldr.map((t) => String(t).trim()).filter(Boolean).slice(0, 3)
-      : [],
-    bodyMarkdown: parsed.bodyMarkdown.trim(),
-  };
+  throw lastError ?? new Error('All Gemini models failed');
 }
