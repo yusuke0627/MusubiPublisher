@@ -17,6 +17,64 @@ import type {
 } from './types.js';
 
 /**
+ * Extracts `sourceUrl` from a Markdown article's YAML frontmatter.
+ */
+export function extractSourceUrlFromFrontmatter(markdown: string): string | null {
+  const fmMatch = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fmMatch) {
+    return null;
+  }
+  const urlMatch = fmMatch[1].match(/^sourceUrl:\s*(?:"([^"]+)"|'([^']+)'|(\S+))/m);
+  if (!urlMatch) {
+    return null;
+  }
+  return (urlMatch[1] || urlMatch[2] || urlMatch[3] || '').trim() || null;
+}
+
+/**
+ * Scans all published Markdown articles under `articlesDir` and collects their `sourceUrl` values.
+ */
+export function collectSeenUrlsFromArticlesDir(articlesDir: string): string[] {
+  if (!fs.existsSync(articlesDir)) {
+    return [];
+  }
+  const urls: string[] = [];
+  for (const entry of fs.readdirSync(articlesDir)) {
+    if (!entry.endsWith('.md')) continue;
+    const content = fs.readFileSync(path.join(articlesDir, entry), 'utf8');
+    const url = extractSourceUrlFromFrontmatter(content);
+    if (url) {
+      urls.push(url);
+    }
+  }
+  return urls;
+}
+
+/**
+ * Extracts source URLs from newline- or JSON-array-formatted `EXTRA_SEEN_URLS`.
+ */
+export function parseExtraSeenUrls(raw: string | undefined): string[] {
+  if (!raw || !raw.trim()) {
+    return [];
+  }
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => String(v).trim()).filter(Boolean);
+      }
+    } catch {
+      // Fall through to line splitting
+    }
+  }
+  return trimmed
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/**
  * Deduplicates against seen URLs and selects up to `maxCount` candidates,
  * balancing across distinct sources so one subreddit never dominates a run.
  */
@@ -75,10 +133,12 @@ async function main() {
   const outManifestPath = path.join(rootDir, 'data/draft-manifest.json');
 
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as SourcesConfig;
-  const seenState = JSON.parse(
-    fs.readFileSync(seenPath, 'utf8')
-  ) as SeenSourcesState;
-  const seenSet = new Set(seenState.seenUrls);
+  const legacySeen: string[] = fs.existsSync(seenPath)
+    ? ((JSON.parse(fs.readFileSync(seenPath, 'utf8')) as SeenSourcesState).seenUrls ?? [])
+    : [];
+  const publishedSeen = collectSeenUrlsFromArticlesDir(articlesDir);
+  const extraSeen = parseExtraSeenUrls(process.env.EXTRA_SEEN_URLS);
+  const seenSet = new Set<string>([...legacySeen, ...publishedSeen, ...extraSeen]);
 
   const [redditItems, hnItems, rssItems] = await Promise.all([
     fetchRedditItems(config.reddit),
@@ -136,11 +196,7 @@ async function main() {
     }
   }
 
-  // Keep most recent 500 seen URLs to prevent unbounded file growth
-  const updatedSeen: SeenSourcesState = {
-    seenUrls: Array.from(seenSet).slice(-500),
-  };
-  fs.writeFileSync(seenPath, `${JSON.stringify(updatedSeen, null, 2)}\n`, 'utf8');
+  // Write manifest only (do NOT mutate shared data/seen-sources.json so draft PRs never conflict)
   fs.writeFileSync(outManifestPath, `${JSON.stringify(drafts, null, 2)}\n`, 'utf8');
 
   console.log(`[MusubiPublisher] Generated ${drafts.length} draft article(s).`);

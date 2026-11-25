@@ -6,7 +6,11 @@ import {
   generateArticleWithGemini,
   sanitizeSlug,
 } from '../generator.js';
-import { selectDiverseCandidates } from '../run-pipeline.js';
+import {
+  extractSourceUrlFromFrontmatter,
+  parseExtraSeenUrls,
+  selectDiverseCandidates,
+} from '../run-pipeline.js';
 import { fetchHackerNewsItems } from '../sources/hackernews.js';
 import { fetchRedditItems } from '../sources/reddit.js';
 import { parseRssItems } from '../sources/rss.js';
@@ -148,6 +152,26 @@ describe('selectDiverseCandidates', () => {
       'https://b/1',
       'https://c/1',
     ]);
+  });
+
+  it('extracts sourceUrl from article frontmatter and parses EXTRA_SEEN_URLS', () => {
+    const md = `---
+title: "Sample"
+sourceUrl: "https://news.ycombinator.com/item?id=12345"
+---
+
+Body`;
+    expect(extractSourceUrlFromFrontmatter(md)).toBe(
+      'https://news.ycombinator.com/item?id=12345'
+    );
+    expect(extractSourceUrlFromFrontmatter('No frontmatter')).toBeNull();
+
+    expect(
+      parseExtraSeenUrls('["https://a.example/1", "https://b.example/2"]')
+    ).toEqual(['https://a.example/1', 'https://b.example/2']);
+    expect(
+      parseExtraSeenUrls('https://a.example/1\nhttps://b.example/2\n')
+    ).toEqual(['https://a.example/1', 'https://b.example/2']);
   });
 });
 
