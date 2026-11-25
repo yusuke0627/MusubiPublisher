@@ -191,4 +191,38 @@ describe('Gemini generator & Markdown formatter', () => {
     expect(prBody).toContain('Merge');
     expect(prBody).toContain('オフラインキャッシュ設計が好評');
   });
+
+  it('falls back to the next Gemini model when primary model returns 429 rate limit', async () => {
+    const calledModels: string[] = [];
+    const createMock = vi.fn(async (params: { model: string }) => {
+      calledModels.push(params.model);
+      if (params.model === 'gemini-3.5-flash-lite') {
+        throw Object.assign(new Error('Rate limit exceeded'), {
+          rawResponse: { status: 429 },
+          error: { code: 'too_many_requests' },
+        });
+      }
+      return {
+        output_text: JSON.stringify({
+          slug: 'fallback-success',
+          title: 'フォールバックモデルで生成成功',
+          description: 'レート制限時に自動で別モデルへ切り替えて記事を生成しました。',
+          tags: ['Gemini', '自動化'],
+          tldr: ['429検知で自動切替', '別モデルで記事生成', '安定運用を実現'],
+          bodyMarkdown: '## フォールバック成功\n\n無事に生成されました。',
+        }),
+      };
+    });
+
+    const source = makeSource();
+    const article = await generateArticleWithGemini(source, {
+      apiKey: 'test-key',
+      model: 'gemini-3.5-flash-lite',
+      fallbackModels: ['gemini-3.1-flash-lite', 'gemini-3.8-flash'],
+      aiClient: { interactions: { create: createMock } } as never,
+    });
+
+    expect(calledModels).toEqual(['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']);
+    expect(article.slug).toBe('fallback-success');
+  });
 });

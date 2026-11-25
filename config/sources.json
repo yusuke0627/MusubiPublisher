@@ -1,6 +1,6 @@
 {
   "maxArticlesPerRun": 3,
-  "geminiModel": "gemini-3.8-flash",
+  "geminiModel": "gemini-3.5-flash-lite",
   "reddit": [
     {
       "subreddit": "technology",

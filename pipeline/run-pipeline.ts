@@ -144,6 +144,12 @@ async function main() {
   fs.writeFileSync(outManifestPath, `${JSON.stringify(drafts, null, 2)}\n`, 'utf8');
 
   console.log(`[MusubiPublisher] Generated ${drafts.length} draft article(s).`);
+
+  if (candidates.length > 0 && drafts.length === 0) {
+    throw new Error(
+      `Failed to generate any draft articles out of ${candidates.length} candidate(s).`
+    );
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
