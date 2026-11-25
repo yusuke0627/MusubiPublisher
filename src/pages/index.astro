@@ -1,70 +1,48 @@
 ---
 import { getCollection } from 'astro:content';
+import ArticleCard from '../components/ArticleCard.astro';
+import Sidebar from '../components/Sidebar.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import MusubiReaderBanner from '../components/MusubiReaderBanner.astro';
-import { formatDateJa, withBase } from '../lib/urls';
+import { withBase } from '../lib/urls';
 
 const allArticles = (await getCollection('articles')).sort(
   (a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
 );
+
 const categories = Array.from(new Set(allArticles.map((a) => a.data.category)));
+
+const tagCounts = new Map<string, number>();
+for (const article of allArticles) {
+  for (const tag of article.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const popularTags = Array.from(tagCounts.entries())
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12)
+  .map(([tag]) => tag);
 ---
 
-<BaseLayout title="MusubiPublisher">
-  <section style="margin-bottom: 24px;">
-    <h1 style="margin: 0 0 8px; font-size: 26px; letter-spacing: -0.02em;">
-      世界の話題を、読みやすく紡ぐ。
-    </h1>
-    <p style="margin: 0; font-size: 14px; color: var(--muted);">
-      Reddit・Hacker News・国内トレンドから注目のトピックを厳選し、3行まとめと要点解説でお届けします。
-    </p>
-  </section>
-
-  {categories.length > 0 && (
-    <nav
-      aria-label="カテゴリ"
-      style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px;"
-    >
-      <a class="badge" href={withBase('')}>すべて ({allArticles.length})</a>
-      {categories.map((cat) => (
-        <a
-          href={withBase(`category/${encodeURIComponent(cat)}/`)}
-          style="display:inline-block; padding:3px 11px; border-radius:999px; font-size:12px; font-weight:600; border:1px solid var(--border); background:var(--surface); color:var(--text);"
-        >
-          {cat}
-        </a>
-      ))}
-    </nav>
-  )}
-
-  <section style="display:flex; flex-direction:column; gap:14px;">
-    {allArticles.map((article) => (
-      <article class="card" style="transition: border-color 0.15s ease;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-          <a
-            class="badge"
-            href={withBase(`category/${encodeURIComponent(article.data.category)}/`)}
-          >
-            {article.data.category}
-          </a>
-          <span style="font-size:12px; color:var(--muted);">
-            {article.data.sourceName} ・ {formatDateJa(article.data.publishedAt)}
-          </span>
-        </div>
-        <h2 style="margin:0 0 8px; font-size:19px; line-height:1.45;">
-          <a
-            href={withBase(`articles/${article.id}/`)}
-            style="color:var(--text);"
-          >
-            {article.data.title}
-          </a>
-        </h2>
-        <p style="margin:0; font-size:14px; color:var(--muted);">
-          {article.data.description}
-        </p>
-      </article>
+<BaseLayout title="MusubiPublisher" wide>
+  <nav class="category-bar" aria-label="カテゴリ">
+    <a class="category-pill active" href={withBase('')}>すべて</a>
+    {categories.map((cat) => (
+      <a
+        class="category-pill"
+        href={withBase(`category/${encodeURIComponent(cat)}/`)}
+      >
+        {cat}
+      </a>
     ))}
-  </section>
+  </nav>
 
-  <MusubiReaderBanner />
+  <div class="feed-grid">
+    <section class="feed-list" aria-label="最新記事一覧">
+      {allArticles.map((article) => (
+        <ArticleCard article={article} />
+      ))}
+    </section>
+
+    <Sidebar popularTags={popularTags} />
+  </div>
 </BaseLayout>

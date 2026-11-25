@@ -1,32 +1,51 @@
 ---
 import { withBase } from '../lib/urls';
+import MusubiLogo from './MusubiLogo.astro';
 ---
 
-<aside
-  class="card"
-  style="margin-top: 28px; background: var(--surface-soft); display: flex; flex-direction: column; gap: 10px;"
->
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-    <span class="badge">専用 iOS リーダー</span>
-    <span style="font-size:12px; color:var(--muted);">広告カット・Wi-Fiオフライン対応</span>
+<aside class="card reader-banner">
+  <div class="reader-banner-row">
+    <div style="color: var(--indigo);">
+      <MusubiLogo size={42} />
+    </div>
+    <div style="flex:1; min-width:200px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+        <span class="badge">専用 iOS リーダー</span>
+        <span style="font-size:12px; color:var(--muted);">広告カット・Wi-Fiオフライン対応</span>
+      </div>
+      <h2 style="margin:0 0 4px; font-size:17px; font-weight:800;">
+        MusubiPublisher の記事を爆速・オフラインで読む
+      </h2>
+      <p style="margin:0; font-size:13.5px; color:var(--muted);">
+        姉妹アプリ <strong>MusubiReader</strong> で RSS を購読すると、Wi-Fi 接続時に自動で事前ダウンロード。移動中でも一瞬で記事が開けます。
+      </p>
+    </div>
   </div>
-  <h2 style="margin:0; font-size:17px;">MusubiPublisher の記事を爆速・オフラインで読む</h2>
-  <p style="margin:0; font-size:14px; color:var(--muted);">
-    姉妹アプリ <strong>MusubiReader</strong> でこのサイトの RSS フィードを購読すると、Wi-Fi 接続時に自動で事前ダウンロード。地下鉄や移動中でも一瞬で記事が開けます。
-  </p>
-  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;">
     <a
       href="https://yusuke0627.github.io/MusubiReader/"
       rel="noopener noreferrer"
-      style="display:inline-block; padding:9px 16px; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; font-size:13px; text-decoration:none;"
+      style="display:inline-block; padding:10px 18px; border-radius:10px; background:var(--indigo); color:var(--indigo-contrast); font-weight:700; font-size:13px; text-decoration:none;"
     >
       MusubiReader を見る ↗
     </a>
     <a
       href={withBase('rss.xml')}
-      style="display:inline-block; padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-weight:700; font-size:13px; text-decoration:none;"
+      style="display:inline-block; padding:10px 16px; border-radius:10px; border:1px solid var(--border); background:var(--surface-soft); color:var(--text); font-weight:700; font-size:13px; text-decoration:none;"
     >
       RSS フィードURL
     </a>
   </div>
 </aside>
+
+<style>
+  .reader-banner {
+    margin-top: 26px;
+  }
+  .reader-banner-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+</style>

@@ -1,48 +1,61 @@
 ---
 import { getCollection } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import Sidebar from '../../components/Sidebar.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { formatDateJa, withBase } from '../../lib/urls';
+import { withBase } from '../../lib/urls';
 
 export async function getStaticPaths() {
-  const articles = await getCollection('articles');
-  const categories = Array.from(new Set(articles.map((a) => a.data.category)));
+  const allArticles = (await getCollection('articles')).sort(
+    (a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+  );
+  const categories = Array.from(new Set(allArticles.map((a) => a.data.category)));
+
+  const tagCounts = new Map<string, number>();
+  for (const article of allArticles) {
+    for (const tag of article.data.tags) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+  const popularTags = Array.from(tagCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([tag]) => tag);
+
   return categories.map((category) => ({
     params: { category },
     props: {
       category,
-      articles: articles
-        .filter((a) => a.data.category === category)
-        .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()),
+      categories,
+      popularTags,
+      articles: allArticles.filter((a) => a.data.category === category),
     },
   }));
 }
 
-const { category, articles } = Astro.props;
+const { category, categories, popularTags, articles } = Astro.props;
 ---
 
-<BaseLayout title={`${category} の記事一覧`}>
-  <div style="margin-bottom:20px;">
-    <a href={withBase('')} style="font-size:13px; font-weight:600;">
-      &larr; すべての記事
-    </a>
-    <h1 style="margin:8px 0 0; font-size:24px;">{category}</h1>
-  </div>
-
-  <section style="display:flex; flex-direction:column; gap:14px;">
-    {articles.map((article) => (
-      <article class="card">
-        <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">
-          {article.data.sourceName} ・ {formatDateJa(article.data.publishedAt)}
-        </div>
-        <h2 style="margin:0 0 6px; font-size:18px; line-height:1.45;">
-          <a href={withBase(`articles/${article.id}/`)} style="color:var(--text);">
-            {article.data.title}
-          </a>
-        </h2>
-        <p style="margin:0; font-size:14px; color:var(--muted);">
-          {article.data.description}
-        </p>
-      </article>
+<BaseLayout title={`${category} の記事一覧`} wide>
+  <nav class="category-bar" aria-label="カテゴリ">
+    <a class="category-pill" href={withBase('')}>すべて</a>
+    {categories.map((cat) => (
+      <a
+        class={cat === category ? 'category-pill active' : 'category-pill'}
+        href={withBase(`category/${encodeURIComponent(cat)}/`)}
+      >
+        {cat}
+      </a>
     ))}
-  </section>
+  </nav>
+
+  <div class="feed-grid">
+    <section class="feed-list" aria-label={`${category} の記事`}>
+      {articles.map((article) => (
+        <ArticleCard article={article} />
+      ))}
+    </section>
+
+    <Sidebar popularTags={popularTags} />
+  </div>
 </BaseLayout>
