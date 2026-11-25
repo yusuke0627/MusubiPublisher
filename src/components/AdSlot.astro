@@ -1,0 +1,23 @@
+---
+interface Props {
+  slot?: string;
+}
+const { slot } = Astro.props;
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+---
+
+{adsenseClient && slot && (
+  <aside class="ad-slot" aria-label="広告" style="margin: 24px 0; text-align: center;">
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      data-ad-client={adsenseClient}
+      data-ad-slot={slot}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    />
+    <script is:inline>
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </aside>
+)}
